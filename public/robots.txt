@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /_nuxt/builds/
+
+Sitemap: https://stahlleichtbau-haus.de/sitemap.xml
