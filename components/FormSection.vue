@@ -286,6 +286,11 @@
               </div>
             </div>
 
+            <!-- Fehlermeldung -->
+            <div v-if="submitError" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {{ submitError }}
+            </div>
+
             <!-- Buttons -->
             <div class="flex gap-4">
               <button type="button" @click="step = 1"
@@ -313,6 +318,7 @@ useScrollAnimation()
 // ── State ──
 const router = useRouter()
 const submitting = ref(false)
+const submitError = ref('')
 const step = ref(1)
 const dragOver = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -618,10 +624,44 @@ function formatFileSize(bytes: number): string {
 
 async function handleSubmit() {
   submitting.value = true
-  // TODO: Backend-Anbindung (E-Mail senden via API)
-  // Simulate network delay for UX feedback
-  await new Promise(resolve => setTimeout(resolve, 1200))
-  router.push('/danke')
+  submitError.value = ''
+
+  const fd = new FormData()
+  fd.append('breite', String(form.breite ?? ''))
+  fd.append('laenge', String(form.laenge ?? ''))
+  fd.append('geschossHoehe', String(form.geschossHoehe))
+  fd.append('anzahlGeschosse', String(form.anzahlGeschosse))
+  fd.append('kniestock', String(form.kniestock))
+  fd.append('kniestockHoehe', String(form.kniestockHoehe ?? ''))
+  fd.append('dachtyp', form.dachtyp)
+  fd.append('dachneigung', String(form.dachneigung ?? ''))
+  fd.append('dachuberstand', String(form.dachuberstand ?? ''))
+  fd.append('volumenM3', volumeDisplayM3.value)
+  fd.append('flaecheM2', flaecheM2.value)
+  fd.append('firma', form.firma)
+  fd.append('ansprechpartner', form.ansprechpartner)
+  fd.append('email', form.email)
+  fd.append('telefon', form.telefon)
+  fd.append('nachricht', form.nachricht)
+
+  for (const file of uploadedFiles.value) {
+    fd.append('dateien', file, file.name)
+  }
+
+  try {
+    const res = await fetch('https://n8n.kafilm.de/webhook/b97b27e3-889b-45c0-bbd3-bc78c5e05a78', {
+      method: 'POST',
+      body: fd,
+    })
+
+    if (!res.ok) throw new Error(`Status ${res.status}`)
+
+    router.push('/danke')
+  } catch {
+    submitError.value = 'Ihre Anfrage konnte leider nicht gesendet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns direkt.'
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
